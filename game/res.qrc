@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/res">
+        <file>resource/logo.png</file>
+        <file>resource/sprite/map.png</file>
+        <file>resource/sprite/things.png</file>
+        <file>resource/sfx/pacman_chomp.wav</file>
+        <file>resource/sfx/pacman_death.wav</file>
+        <file>resource/sfx/pacman_eatfruit.wav</file>
+        <file>resource/sfx/pacman_eatghost.wav</file>
+        <file>resource/font/arcadepi.ttf</file>
+        <file>resource/sprite/things2.png</file>
+        <file>resource/sprite/pacman.png</file>
+        <file>resource/SyNet.qss</file>
+        <file>resource/win.png</file>
+        <file>resource/lose.png</file>
+    </qresource>
+</RCC>
