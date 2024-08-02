@@ -59,15 +59,11 @@ private:
 
     //GUI update
 
-    void renderMap();
+    void renderMap(const QPoint& pacmanPosition);
 
     void renderPacman();
 
     void renderGhosts();
-
-    void renderFruit();
-
-    void renderGUI();
 
     bool pacmanCanMove();
 
@@ -77,7 +73,7 @@ private:
 
     void ghostMovement(Ghost* ghost);
 
-    void GhostAndPacmanCollision(Ghost* ghost);
+    void ghostAndPacmanCollision(Ghost* ghost);
 
     float calculateDistance(Ghost* ghost, int addX, int addY);
 

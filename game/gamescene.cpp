@@ -12,29 +12,23 @@
 
 GameScene::GameScene(QObject *parent)
     : QGraphicsScene{parent},
-    m_map { new PacmanMap("map.txt") },
+    m_map { new PacmanMap("map2.txt") },
     m_loopSpeed { int(1000.0f/Resources::FPS) },
     m_score { 0 },
-    TOP_SPACE{ 50 },
+    TOP_SPACE{ 65 },
     LEFT_SPACE ((Resources::WINDOW_SIZE.width() - m_map->getMapWidth()*Resources::MAP_TILE_SIZE)/2),
     m_scenePosition { 0, 0 }
 {
     srand(time(0));
     loadPixmap();
     loadSFX();
-    setSceneRect(0,0, Resources::WINDOW_SIZE.width(), Resources::WINDOW_SIZE.height());
+    setSceneRect(m_scenePosition.x(), m_scenePosition.y(), Resources::WINDOW_SIZE.width(), Resources::WINDOW_SIZE.height());
     setBackgroundBrush(QBrush(Resources::BG_COLOR));
     initMap();
     initGUI();
     initFruit();
     initPackman();
     initGhosts();
-
-    renderMap();
-    renderGhosts();
-    renderFruit();
-    renderPacman();
-    renderGUI();
 
     connect(&m_timer, &QTimer::timeout, this, &GameScene::loop);
     connect(m_pacman, &Pacman::deadAnimOver, this, &GameScene::restartPositions);
@@ -87,7 +81,6 @@ void GameScene::loop()
     if (entityCanMove(m_pacman, m_pacman->getCurrentDirection()) && !m_pacman->isDead())
     {
         m_pacman->move();
-        m_pacman->setPos(m_pacman->getScreenPosition().x() + LEFT_SPACE, m_pacman->getScreenPosition().y() + TOP_SPACE);
     }
     else
     {
@@ -115,7 +108,7 @@ void GameScene::loop()
     {
         m_pacman->setCurrentDirection(m_pacman->getNextDirection());
     }
-    renderMap();
+    renderMap(m_pacman->getPosition());
 
     ghostMovement(m_blinky);
     ghostMovement(m_inky);
@@ -263,6 +256,7 @@ void GameScene::initPackman()
     m_pacman = new Pacman(m_map->getPacmanStartPosition());
     m_pacman->setFocus();
     m_pacman->setPos(m_pacman->getPosition().x()*Resources::MAP_TILE_SIZE - Resources::MAP_TILE_SIZE/2 + LEFT_SPACE, m_pacman->getPosition().y()*Resources::MAP_TILE_SIZE + TOP_SPACE);
+    addItem(m_pacman);
 }
 
 void GameScene::initGhosts()
@@ -282,6 +276,11 @@ void GameScene::initGhosts()
     m_clyde = new Clyde(m_map->getClydeStartPosition());
     m_clyde->setPos(m_clyde->getScreenPosition().x() + LEFT_SPACE, m_clyde->getScreenPosition().y() + TOP_SPACE);
     m_clyde->setAnimated(false);
+
+    addItem(m_blinky);
+    addItem(m_inky);
+    addItem(m_pinky);
+    addItem(m_clyde);
 }
 
 void GameScene::initFruit()
@@ -289,6 +288,7 @@ void GameScene::initFruit()
     m_fruit = new Fruits(m_map->getFruitPosition().x(),m_map->getFruitPosition().y());
     m_fruit->setPos(m_fruit->getScreenPosition().x() + LEFT_SPACE, m_fruit->getScreenPosition().y() + TOP_SPACE);
     m_fruit->setPixmap(QPixmap());
+    addItem(m_fruit);
 }
 
 void GameScene::initGUI()
@@ -303,6 +303,7 @@ void GameScene::initGUI()
     m_scoreTextItem->setPos(scorePosition);
     m_scoreTextItem->setFont(m_basicFont);
     m_scoreTextItem->setText("Score: " + QString::number(m_score).right(5));
+    addItem(m_scoreTextItem);
 
     m_lives = Resources::AMOUNT_OF_LIVES;
     QPoint livesPosition{ 100, 30 };
@@ -312,23 +313,19 @@ void GameScene::initGUI()
         pixmapItem->setPixmap(m_lifePacmanPixmap);
         pixmapItem->setPos(i * Resources::ENTITY_TILE_SIZE + livesPosition.x(), livesPosition.y());
         m_livesPixmapItem.append(pixmapItem);
+        addItem(m_livesPixmapItem[i]);
     }
+
 }
 
-void GameScene::renderMap()
+void GameScene::renderMap(const QPoint& pacmanPosition)
 {
-    for (int i = 0; i < m_map->getMapHeight(); i++)
-    {
-        for (int j = 0; j < m_map->getMapWidth(); j++)
-        {
-            m_mapPixmapItems[i][j]->setPixmap(m_mapPixmaps[ m_map->tiles(i, j) ]);
-        }
-    }
+    m_mapPixmapItems[pacmanPosition.x()][pacmanPosition.y()]->setPixmap(m_mapPixmaps[ m_map->tiles(pacmanPosition.x(), pacmanPosition.y()) ]);
 }
 
 void GameScene::renderPacman()
 {
-    addItem(m_pacman);
+    m_pacman->setPos(m_pacman->getScreenPosition().x() + LEFT_SPACE, m_pacman->getScreenPosition().y() + TOP_SPACE);
 }
 
 void GameScene::renderGhosts()
@@ -337,26 +334,6 @@ void GameScene::renderGhosts()
     m_inky->setPos(m_inky->getScreenPosition().x() + LEFT_SPACE, m_inky->getScreenPosition().y() + TOP_SPACE);
     m_pinky->setPos(m_pinky->getScreenPosition().x() + LEFT_SPACE, m_pinky->getScreenPosition().y() + TOP_SPACE);
     m_clyde->setPos(m_clyde->getScreenPosition().x() + LEFT_SPACE, m_clyde->getScreenPosition().y() + TOP_SPACE);
-
-    addItem(m_blinky);
-    addItem(m_inky);
-    addItem(m_pinky);
-    addItem(m_clyde);
-}
-
-void GameScene::renderFruit()
-{
-    addItem(m_fruit);
-}
-
-void GameScene::renderGUI()
-{
-    addItem(m_scoreTextItem);
-
-    for(int i = 0; i < m_lives; ++i)
-    {
-        addItem(m_livesPixmapItem[i]);
-    }
 }
 
 void GameScene::pacmanCollizion()
@@ -368,22 +345,22 @@ void GameScene::pacmanCollizion()
 
     if(m_pacman->collisionWithEntity(m_blinky))
     {
-        GhostAndPacmanCollision(m_blinky);
+        ghostAndPacmanCollision(m_blinky);
     }
 
     if(m_pacman->collisionWithEntity(m_inky))
     {
-        GhostAndPacmanCollision(m_inky);
+        ghostAndPacmanCollision(m_inky);
     }
 
     if(m_pacman->collisionWithEntity(m_pinky))
     {
-        GhostAndPacmanCollision(m_pinky);
+        ghostAndPacmanCollision(m_pinky);
     }
 
     if(m_pacman->collisionWithEntity(m_clyde))
     {
-        GhostAndPacmanCollision(m_clyde);
+        ghostAndPacmanCollision(m_clyde);
     }
 }
 
@@ -463,7 +440,7 @@ bool GameScene::entityCanMove(Entity *entity, const Resources::Direction& entity
     return false;
 }
 
-void GameScene::GhostAndPacmanCollision(Ghost* ghost)
+void GameScene::ghostAndPacmanCollision(Ghost* ghost)
 {
     if (ghost->isWeak())
     {
@@ -514,21 +491,23 @@ void GameScene::keyPressEvent(QKeyEvent *event)
         emit gameClosed();
         break;
     case Qt::Key_W:
-        m_scenePosition = QPoint(m_scenePosition.x(),m_scenePosition.y()-20);
-        setSceneRect(QRect(m_scenePosition.x(),m_scenePosition.y(), sceneRect().toRect().height(),sceneRect().toRect().width()));
-        break;
-    case Qt::Key_D:
-        m_scenePosition = QPoint(m_scenePosition.x()+20,m_scenePosition.y());
-        setSceneRect(QRect(m_scenePosition.x(),m_scenePosition.y(), sceneRect().toRect().height(),sceneRect().toRect().width()));
-        break;
-    case Qt::Key_S:
-        m_scenePosition = QPoint(m_scenePosition.x(),m_scenePosition.y()+20);
-        setSceneRect(QRect(m_scenePosition.x(),m_scenePosition.y(), sceneRect().toRect().height(),sceneRect().toRect().width()));
+        m_scenePosition.setY(m_scenePosition.y()-50);
+        setSceneRect(m_scenePosition.x(), m_scenePosition.y(), Resources::WINDOW_SIZE.width(), Resources::WINDOW_SIZE.height());
         break;
     case Qt::Key_A:
-        m_scenePosition = QPoint(m_scenePosition.x()-20,m_scenePosition.y());
-        setSceneRect(QRect(m_scenePosition.x(),m_scenePosition.y(), sceneRect().toRect().height(),sceneRect().toRect().width()));
+        m_scenePosition.setX(m_scenePosition.x()-50);
+        setSceneRect(m_scenePosition.x(), m_scenePosition.y(), Resources::WINDOW_SIZE.width(), Resources::WINDOW_SIZE.height());
+        break;
+    case Qt::Key_S:
+        m_scenePosition.setY(m_scenePosition.y()+50);
+        setSceneRect(m_scenePosition.x(), m_scenePosition.y(), Resources::WINDOW_SIZE.width(), Resources::WINDOW_SIZE.height());
+        break;
+    case Qt::Key_D:
+        m_scenePosition.setX(m_scenePosition.x()+50);
+        setSceneRect(m_scenePosition.x(), m_scenePosition.y(), Resources::WINDOW_SIZE.width(), Resources::WINDOW_SIZE.height());
         break;
     }
+
+
     QGraphicsScene::keyPressEvent(event);
 }

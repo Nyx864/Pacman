@@ -16,8 +16,6 @@ public:
 signals:
     void buttonPlayClicked();
 
-    // void buttonSettingsClicked();
-
     void buttonCloseClicked();
 
 private:
